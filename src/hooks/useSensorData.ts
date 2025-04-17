@@ -10,9 +10,18 @@ interface UseSensorDataProps {
   clearBuffer?: () => void;
 }
 
+interface ReadingData {
+  pm25: number;
+  pm10: number;
+  timestamp: Date;
+}
+
 interface SensorData {
   pm25: number | null;
   pm10: number | null;
+  avgPm25: number | null;
+  avgPm10: number | null;
+  readingsCount: number;
   lastUpdate: string | null;
   packetType: 'standard' | 'modified' | null;
 }
@@ -25,7 +34,39 @@ export const useSensorData = ({ dataBuffer, onLog, clearBuffer }: UseSensorDataP
   const [pm10, setPm10] = useState<number | null>(null); 
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [packetType, setPacketType] = useState<'standard' | 'modified' | null>(null);
-  const [lastProcessedLength, setLastProcessedLength] = useState<number>(0);
+  const [readings, setReadings] = useState<ReadingData[]>([]);
+  const [avgPm25, setAvgPm25] = useState<number | null>(null);
+  const [avgPm10, setAvgPm10] = useState<number | null>(null);
+  
+  // Function to add a new reading and calculate averages
+  const addReading = (newPm25: number, newPm10: number) => {
+    // Create a new reading
+    const newReading: ReadingData = {
+      pm25: newPm25,
+      pm10: newPm10,
+      timestamp: new Date()
+    };
+    
+    // Add to readings array, keeping the most recent 10
+    const updatedReadings = [...readings, newReading].slice(-10);
+    setReadings(updatedReadings);
+    
+    // Set current values
+    setPm25(newPm25);
+    setPm10(newPm10);
+    setLastUpdate(new Date().toLocaleTimeString());
+    
+    // Calculate averages
+    const avgPm25Value = updatedReadings.reduce((sum, reading) => sum + reading.pm25, 0) / updatedReadings.length;
+    const avgPm10Value = updatedReadings.reduce((sum, reading) => sum + reading.pm10, 0) / updatedReadings.length;
+    
+    // Set average values
+    setAvgPm25(parseFloat(avgPm25Value.toFixed(1)));
+    setAvgPm10(parseFloat(avgPm10Value.toFixed(1)));
+    
+    console.log(`[DEBUG] Added reading: PM2.5=${newPm25}, PM10=${newPm10}`);
+    console.log(`[DEBUG] Current averages (${updatedReadings.length} readings): PM2.5=${avgPm25Value.toFixed(1)}, PM10=${avgPm10Value.toFixed(1)}`);
+  };
   
   // Process buffer whenever it changes
   useEffect(() => {
@@ -63,9 +104,9 @@ export const useSensorData = ({ dataBuffer, onLog, clearBuffer }: UseSensorDataP
 
         if (pm25Direct >= 0 && pm25Direct <= 999 && pm10Direct >= 0 && pm10Direct <= 999) {
           console.log(`[DEBUG] Found valid values in cleaned bytes: PM2.5=${pm25Direct}, PM10=${pm10Direct}`);
-          setPm25(pm25Direct);
-          setPm10(pm10Direct); 
-          setLastUpdate(new Date().toLocaleTimeString());
+          
+          // Add reading and update averages
+          addReading(pm25Direct, pm10Direct);
           setPacketType('modified');
           
           if (onLog) {
@@ -99,9 +140,9 @@ export const useSensorData = ({ dataBuffer, onLog, clearBuffer }: UseSensorDataP
         
         if (values) {
           console.log(`[DEBUG] Valid standard packet confirmed, PM2.5: ${values.pm25}, PM10: ${values.pm10}`);
-          setPm25(values.pm25);
-          setPm10(values.pm10);
-          setLastUpdate(new Date().toLocaleTimeString());
+          
+          // Add reading and update averages
+          addReading(values.pm25, values.pm10);
           setPacketType('standard');
           
           if (onLog) {
@@ -123,7 +164,15 @@ export const useSensorData = ({ dataBuffer, onLog, clearBuffer }: UseSensorDataP
     console.log('[DEBUG] No valid packets found in buffer');
   }, [dataBuffer, onLog, clearBuffer]);
   
-  return { pm25, pm10, lastUpdate, packetType };
+  return { 
+    pm25, 
+    pm10, 
+    avgPm25,
+    avgPm10,
+    readingsCount: readings.length,
+    lastUpdate, 
+    packetType 
+  };
 };
 
 export default useSensorData; 

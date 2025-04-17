@@ -5,6 +5,9 @@ import { getPM25Category, getPM10Category } from '../utils/sensorUtils';
 interface SensorDataProps {
   pm25: number | null;
   pm10: number | null;
+  avgPm25?: number | null;
+  avgPm10?: number | null;
+  readingsCount?: number;
   lastUpdate: string | null;
   connected: boolean;
   packetType?: 'standard' | 'modified' | null;
@@ -13,13 +16,20 @@ interface SensorDataProps {
 const SensorData: React.FC<SensorDataProps> = ({ 
   pm25, 
   pm10, 
+  avgPm25 = null,
+  avgPm10 = null,
+  readingsCount = 0,
   lastUpdate, 
   connected,
   packetType
 }) => {
+  // Use average values if available, otherwise fall back to current readings
+  const displayPm25 = avgPm25 !== null && readingsCount > 0 ? avgPm25 : pm25;
+  const displayPm10 = avgPm10 !== null && readingsCount > 0 ? avgPm10 : pm10;
+
   return (
     <View style={styles.sensorDataContainer}>
-      {pm25 === null || pm10 === null ? (
+      {displayPm25 === null || displayPm10 === null ? (
         <View style={styles.noDataContainer}>
           <Text style={styles.noDataText}>No valid data packets detected</Text>
           <Text style={styles.noDataSubtext}>
@@ -31,43 +41,46 @@ const SensorData: React.FC<SensorDataProps> = ({
         </View>
       ) : (
         <>
-          <View style={styles.sensorRow}>
-            <View style={styles.sensorValue}>
-              <Text style={styles.sensorLabel}>PM2.5</Text>
-              <Text style={[
-                styles.sensorReading, 
-                pm25 <= 12 ? styles.goodReading : 
-                pm25 <= 35 ? styles.moderateReading : 
-                pm25 <= 55 ? styles.unhealthySensitiveReading :
-                pm25 <= 150 ? styles.unhealthyReading :
-                pm25 <= 250 ? styles.veryUnhealthyReading : 
-                styles.hazardousReading
-              ]}>
-                {pm25.toFixed(1)}
-              </Text>
-              <Text style={styles.sensorUnit}>µg/m³</Text>
-              <Text style={styles.sensorInfo}>
-                {getPM25Category(pm25)}
-              </Text>
-            </View>
-            
-            <View style={styles.sensorValue}>
-              <Text style={styles.sensorLabel}>PM10</Text>
-              <Text style={[
-                styles.sensorReading,
-                pm10 <= 54 ? styles.goodReading : 
-                pm10 <= 154 ? styles.moderateReading : 
-                pm10 <= 254 ? styles.unhealthySensitiveReading :
-                pm10 <= 354 ? styles.unhealthyReading :
-                pm10 <= 424 ? styles.veryUnhealthyReading : 
-                styles.hazardousReading
-              ]}>
-                {pm10.toFixed(1)}
-              </Text>
-              <Text style={styles.sensorUnit}>µg/m³</Text>
-              <Text style={styles.sensorInfo}>
-                {getPM10Category(pm10)}
-              </Text>
+          <View style={styles.readingTabs}>
+            <Text style={styles.tabHeader}>Air Quality</Text>
+            <View style={styles.sensorRow}>
+              <View style={styles.sensorValue}>
+                <Text style={styles.sensorLabel}>PM2.5</Text>
+                <Text style={[
+                  styles.sensorReading, 
+                  displayPm25 <= 12 ? styles.goodReading : 
+                  displayPm25 <= 35 ? styles.moderateReading : 
+                  displayPm25 <= 55 ? styles.unhealthySensitiveReading :
+                  displayPm25 <= 150 ? styles.unhealthyReading :
+                  displayPm25 <= 250 ? styles.veryUnhealthyReading : 
+                  styles.hazardousReading
+                ]}>
+                  {displayPm25.toFixed(1)}
+                </Text>
+                <Text style={styles.sensorUnit}>µg/m³</Text>
+                <Text style={styles.sensorInfo}>
+                  {getPM25Category(displayPm25)}
+                </Text>
+              </View>
+              
+              <View style={styles.sensorValue}>
+                <Text style={styles.sensorLabel}>PM10</Text>
+                <Text style={[
+                  styles.sensorReading,
+                  displayPm10 <= 54 ? styles.goodReading : 
+                  displayPm10 <= 154 ? styles.moderateReading : 
+                  displayPm10 <= 254 ? styles.unhealthySensitiveReading :
+                  displayPm10 <= 354 ? styles.unhealthyReading :
+                  displayPm10 <= 424 ? styles.veryUnhealthyReading : 
+                  styles.hazardousReading
+                ]}>
+                  {displayPm10.toFixed(1)}
+                </Text>
+                <Text style={styles.sensorUnit}>µg/m³</Text>
+                <Text style={styles.sensorInfo}>
+                  {getPM10Category(displayPm10)}
+                </Text>
+              </View>
             </View>
           </View>
           
@@ -94,6 +107,21 @@ const styles = StyleSheet.create({
   sensorDataContainer: {
     alignItems: 'center',
     padding: 16,
+  },
+  readingTabs: {
+    width: '100%',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#eee',
+    borderRadius: 8,
+    padding: 10,
+  },
+  tabHeader: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#666',
+    marginBottom: 8,
+    textAlign: 'center',
   },
   sensorRow: {
     flexDirection: 'row',

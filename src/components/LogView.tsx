@@ -5,14 +5,12 @@ interface LogViewProps {
   logs: string[];
   onClearLogs: () => void;
   connected: boolean;
-  onSendCommand?: (command: string) => void;
 }
 
 const LogView: React.FC<LogViewProps> = ({ 
   logs, 
   onClearLogs, 
-  connected, 
-  onSendCommand 
+  connected 
 }) => {
   return (
     <View style={styles.container}>
@@ -30,33 +28,6 @@ const LogView: React.FC<LogViewProps> = ({
       >
         <Text style={styles.buttonText}>Clear Log</Text>
       </TouchableOpacity>
-      
-      {/* Add command buttons if connected and handler provided */}
-      {connected && onSendCommand && (
-        <View style={styles.commandSection}>
-          <Text style={styles.commandTitle}>Test Commands</Text>
-          <View style={styles.commandButtons}>
-            <TouchableOpacity 
-              style={[styles.button, styles.commandButton]} 
-              onPress={() => onSendCommand('wake')}
-            >
-              <Text style={styles.buttonText}>Wake</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.button, styles.commandButton]} 
-              onPress={() => onSendCommand('read')}
-            >
-              <Text style={styles.buttonText}>Read</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.button, styles.commandButton]} 
-              onPress={() => onSendCommand('sleep')}
-            >
-              <Text style={styles.buttonText}>Sleep</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
     </View>
   );
 };
@@ -96,26 +67,6 @@ const styles = StyleSheet.create({
   clearButton: {
     backgroundColor: '#F44336',
     marginTop: 10,
-  },
-  commandSection: {
-    marginTop: 10,
-  },
-  commandTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  commandButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  commandButton: {
-    flex: 1,
-    margin: 5,
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 4,
-    alignItems: 'center',
   },
   buttonText: {
     color: 'white',
