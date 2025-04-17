@@ -17,6 +17,13 @@ export const byteArrayToHexString = (bytes: number[]): string => {
 };
 
 /**
+ * Convert a byte array to a decimal string for easier comparison
+ */
+export const byteArrayToDecString = (bytes: number[]): string => {
+  return bytes.map(byte => byte.toString().padStart(3, ' ')).join(' ');
+};
+
+/**
  * Convert modified 20-byte format (with modified pattern) to standard 10-byte format
  * @param modifiedBuffer The 20-byte buffer with modified format
  * @returns The converted 10-byte standard format buffer, or null if not a valid modified format
@@ -81,35 +88,128 @@ export const calculateChecksum = (data: number[]): number => {
 };
 
 /**
+ * Extract PM2.5 and PM10 values directly from the modified 20-byte format
+ * @param buffer The 20-byte buffer with modified format
+ * @returns Object with pm25 and pm10 values, or null if invalid
+ */
+export const extractPMValuesFromModifiedFormat = (buffer: number[]): { pm25: number, pm10: number } | null => {
+  console.log(`[DEBUG] DIRECT EXTRACTION called with buffer:`);
+  console.log(`[DEBUG] HEX: ${byteArrayToHexString(buffer)}`);
+  console.log(`[DEBUG] DEC: ${byteArrayToDecString(buffer)}`);
+  
+  // Check if buffer has correct length and markers
+  if (buffer.length !== 20) {
+    console.log(`[DEBUG] Modified format has incorrect length: ${buffer.length}`);
+    return null;
+  }
+  
+  // Raw decimal values log for analysis
+  console.log(`[DEBUG] Decimal values of all 20 bytes:`);
+  for (let i = 0; i < 20; i++) {
+    console.log(`[DEBUG] byte[${i}] = ${buffer[i]}`);
+  }
+  
+  console.log(`[DEBUG] ====== TRYING DIRECT EXTRACTION FROM MODIFIED FORMAT ======`);
+  
+  // Try all possible positions for PM data bytes
+  // Based on standard SDS011 format, we expect PM2.5 data at positions 2-3 and PM10 at positions 4-5
+  // In the modified format, these may be at different positions
+  
+  // Try direct use of values at positions 2 and 4 (they might be the actual values)
+  let pm25 = buffer[2];
+  let pm10 = buffer[4];
+  
+  console.log(`[DEBUG] Direct values - PM2.5: ${pm25}, PM10: ${pm10}`);
+  
+  // If values look reasonable, return them
+  if (pm25 >= 0 && pm25 <= 999 && pm10 >= 0 && pm10 <= 999) {
+    console.log('[DEBUG] Direct values are reasonable');
+    return { pm25, pm10 };
+  }
+  
+  // Try using values directly at positions 2 and 4, divided by 10
+  pm25 = buffer[2] / 10;
+  pm10 = buffer[4] / 10;
+  
+  console.log(`[DEBUG] Direct values (÷10) - PM2.5: ${pm25}, PM10: ${pm10}`);
+  
+  // If values look reasonable, return them
+  if (pm25 >= 0 && pm25 <= 99.9 && pm10 >= 0 && pm10 <= 99.9) {
+    console.log('[DEBUG] Direct values (÷10) are reasonable');
+    return { pm25, pm10 };
+  }
+  
+  // Try using different positions (8, 12)
+  pm25 = buffer[8];
+  pm10 = buffer[12];
+  
+  console.log(`[DEBUG] Alternative positions (8, 12) - PM2.5: ${pm25}, PM10: ${pm10}`);
+  
+  // If values look reasonable, return them
+  if (pm25 >= 0 && pm25 <= 999 && pm10 >= 0 && pm10 <= 999) {
+    console.log('[DEBUG] Alternative positions (8, 12) values are reasonable');
+    return { pm25, pm10 };
+  }
+  
+  // Try standard formula but with different byte positions
+  // Try first hypothesis: PM2.5 at positions 2-3, PM10 at positions 4-5
+  let pm25Low = buffer[2];
+  let pm25High = buffer[3];
+  let pm10Low = buffer[4];
+  let pm10High = buffer[5];
+  
+  console.log(`[DEBUG] Hypothesis 1 - PM2.5 bytes: ${pm25Low}(${padHex(pm25Low)}),${pm25High}(${padHex(pm25High)}), PM10 bytes: ${pm10Low}(${padHex(pm10Low)}),${pm10High}(${padHex(pm10High)})`);
+  
+  // Calculate values
+  pm25 = ((pm25High * 256) + pm25Low) / 10;
+  pm10 = ((pm10High * 256) + pm10Low) / 10;
+  
+  console.log(`[DEBUG] Hypothesis 1 - Calculated PM2.5: ${pm25}, PM10: ${pm10}`);
+  
+  // If values look reasonable, return them
+  if (pm25 >= 0 && pm25 < 1000 && pm10 >= 0 && pm10 < 1000) {
+    console.log('[DEBUG] Hypothesis 1 values are reasonable');
+    return { pm25, pm10 };
+  } else {
+    console.log(`[DEBUG] Hypothesis 1 values outside reasonable range: PM2.5=${pm25}, PM10=${pm10}`);
+  }
+  
+  // No valid hypothesis found
+  console.log('[DEBUG] ====== ALL HYPOTHESES FAILED. NO VALID PM VALUES FOUND ======');
+  return null;
+};
+
+/**
  * Extract PM2.5 and PM10 values from a valid SDS011/SDS021 packet
  * Supports both standard format (AA...AB) and modified format (0A 0A...0A 0B)
  * @param buffer The buffer containing the packet starting at index 0
  * @returns Object with pm25 and pm10 values, or null if invalid
  */
 export const extractPMValues = (buffer: number[]): { pm25: number, pm10: number } | null => {
-  console.log(`[DEBUG] Extracting values from buffer: ${byteArrayToHexString(buffer)}`);
-  let standardBuffer = buffer;
+  console.log(`[DEBUG] === extractPMValues called with buffer: ${byteArrayToHexString(buffer)} ===`);
   
-  // If this might be a modified format (20 bytes), try to convert it
-  if (buffer.length === 20) {
-    console.log(`[DEBUG] Detected 20-byte buffer, attempting conversion`);
-    const converted = convertModifiedFormat(buffer);
-    if (converted) {
-      console.log(`[DEBUG] Using converted standard buffer`);
-      standardBuffer = converted;
+  // First check if this is a modified format and try direct extraction
+  if (buffer.length === 20 && buffer[0] === 0x0A && buffer[1] === 0x0A) {
+    console.log('[DEBUG] Detected 20-byte modified format, attempting direct extraction');
+    const modifiedValues = extractPMValuesFromModifiedFormat(buffer);
+    if (modifiedValues) {
+      console.log(`[DEBUG] Direct extraction successful: PM2.5=${modifiedValues.pm25}, PM10=${modifiedValues.pm10}`);
+      return modifiedValues;
     } else {
-      console.log(`[DEBUG] Conversion failed, using original buffer`);
+      console.log('[DEBUG] Direct extraction failed for modified format');
     }
+  } else if (buffer.length === 20) {
+    console.log('[DEBUG] 20-byte buffer but not modified format (doesn\'t start with 0A 0A)');
   }
   
-  // Now we only need to process the standard format
-  if (standardBuffer.length === 10 && standardBuffer[0] === 0xAA && standardBuffer[9] === 0xAB) {
+  // If this is a standard format, process normally
+  if (buffer.length === 10 && buffer[0] === 0xAA && buffer[9] === 0xAB) {
     console.log(`[DEBUG] Processing standard 10-byte format`);
     // Extract bytes for PM2.5 and PM10
-    const pm25Low = standardBuffer[2];
-    const pm25High = standardBuffer[3];
-    const pm10Low = standardBuffer[4];
-    const pm10High = standardBuffer[5];
+    const pm25Low = buffer[2];
+    const pm25High = buffer[3];
+    const pm10Low = buffer[4];
+    const pm10High = buffer[5];
     
     console.log(`[DEBUG] Raw bytes - PM2.5: ${pm25Low},${pm25High}, PM10: ${pm10Low},${pm10High}`);
     
@@ -125,11 +225,48 @@ export const extractPMValues = (buffer: number[]): { pm25: number, pm10: number 
       return null;
     }
     
-    console.log(`[DEBUG] Returning valid PM values`);
+    console.log(`[DEBUG] Returning valid PM values from standard format`);
     return { pm25, pm10 };
   }
   
-  console.log(`[DEBUG] No valid packet format found, returning null`);
+  // Try conversion as a last resort
+  if (buffer.length === 20) {
+    console.log(`[DEBUG] Trying conversion path for 20-byte buffer`);
+    try {
+      const converted = convertModifiedFormat(buffer);
+      if (converted) {
+        console.log(`[DEBUG] Conversion successful, standard buffer: ${byteArrayToHexString(converted)}`);
+        
+        // Process the converted buffer
+        const pm25Low = converted[2];
+        const pm25High = converted[3];
+        const pm10Low = converted[4];
+        const pm10High = converted[5];
+        
+        console.log(`[DEBUG] Converted bytes - PM2.5: ${pm25Low},${pm25High}, PM10: ${pm10Low},${pm10High}`);
+        
+        // Calculate values
+        const pm25 = ((pm25High * 256) + pm25Low) / 10;
+        const pm10 = ((pm10High * 256) + pm10Low) / 10;
+        
+        console.log(`[DEBUG] Calculated from converted - PM2.5: ${pm25}, PM10: ${pm10}`);
+        
+        // Only return reasonable values
+        if (pm25 >= 0 && pm25 < 1000 && pm10 >= 0 && pm10 < 1000) {
+          console.log(`[DEBUG] Converted values are reasonable`);
+          return { pm25, pm10 };
+        } else {
+          console.log(`[DEBUG] Converted values out of range: PM2.5=${pm25}, PM10=${pm10}`);
+        }
+      } else {
+        console.log(`[DEBUG] Conversion failed, no valid standard buffer produced`);
+      }
+    } catch (error) {
+      console.log(`[DEBUG] Error during conversion: ${error}`);
+    }
+  }
+  
+  console.log(`[DEBUG] All extraction methods failed, returning null`);
   return null;
 };
 
@@ -226,4 +363,46 @@ export const generateCommandBytes = (command: string): number[] => {
   cmdArray[18] = calculateChecksum(cmdArray);
   
   return cmdArray;
+};
+
+/**
+ * Convert modified 20-byte format to 10-byte format by combining pairs of bytes
+ * @param modifiedBuffer The 20-byte buffer
+ * @returns A 10-byte buffer where each byte is extracted by combining pairs
+ */
+export const convertPairedFormat = (modifiedBuffer: number[]): number[] | null => {
+  console.log(`[DEBUG] Converting paired bytes from 20-byte buffer: ${byteArrayToHexString(modifiedBuffer)}`);
+  
+  // Check if buffer has the right length
+  if (modifiedBuffer.length !== 20) {
+    console.log(`[DEBUG] Invalid buffer length for pairing: ${modifiedBuffer.length}`);
+    return null;
+  }
+  
+  // Create a 10-byte buffer by pairing consecutive bytes
+  const result = [];
+  for (let i = 0; i < 20; i += 2) {
+    // Various ways to combine bytes - try different approaches
+    
+    // Option 1: Simply use the first byte of each pair (this seems to be what the sensor is doing)
+    const firstByteValue = modifiedBuffer[i];
+    
+    // Option 2: Use second byte of each pair
+    const secondByteValue = modifiedBuffer[i + 1];
+    
+    // Option 3: Sum of the two bytes (limited to 0-255)
+    const sumValue = (modifiedBuffer[i] + modifiedBuffer[i + 1]) & 0xFF;
+    
+    // Option 4: Combine as 16-bit value (high byte * 256 + low byte)
+    const combined16bit = (modifiedBuffer[i] << 8) | modifiedBuffer[i + 1];
+    
+    // Log all options for analysis
+    console.log(`[DEBUG] Pair ${i}-${i+1}: ${modifiedBuffer[i]}/${modifiedBuffer[i+1]} → First: ${firstByteValue}, Second: ${secondByteValue}, Sum: ${sumValue}, 16-bit: ${combined16bit}`);
+    
+    // Use Option 1 by default - first byte of each pair
+    result.push(firstByteValue);
+  }
+  
+  console.log(`[DEBUG] Converted 10-byte result: ${byteArrayToHexString(result)}`);
+  return result;
 }; 

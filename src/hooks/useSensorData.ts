@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { extractPMValues, byteArrayToHexString, convertModifiedFormat } from '../utils/sensorUtils';
+import { extractPMValues, byteArrayToHexString, extractPMValuesFromModifiedFormat, byteArrayToDecString, padHex, convertPairedFormat } from '../utils/sensorUtils';
 
 /**
  * Custom hook for handling SDS011/SDS021 sensor data
@@ -34,15 +34,57 @@ export const useSensorData = ({ dataBuffer, onLog }: UseSensorDataProps): Sensor
       return;
     }
     
-    console.log(`[DEBUG] Buffer preview: ${byteArrayToHexString(dataBuffer.slice(0, Math.min(dataBuffer.length, 30)))}`);
+    // Get the first 20 bytes for analysis
+    const previewSlice = dataBuffer.slice(0, Math.min(dataBuffer.length, 20));
+    console.log(`[DEBUG] Buffer preview (HEX): ${byteArrayToHexString(previewSlice)}`);
+    console.log(`[DEBUG] Buffer preview (DEC): ${byteArrayToDecString(previewSlice)}`);
     
-    // Look for standard 10-byte packets (AA...AB)
+    // Check if previewSlice has expected markers for modified format (0A 0A...0A 0B)
+    const convertedslice = byteArrayToDecString(previewSlice)
+    const cleanedSlice = convertedslice.split(' ').filter(s => s !== '').join('')
+    // Convert the cleaned slice string back to a 10 byte array
+    const cleanedBytes = cleanedSlice.match(/.{1,2}/g) || [];
+
+    console.log(`[DEBUG] Converted slice: ${cleanedBytes}`);
+    // Process the cleaned bytes if we have 10 bytes
+    if (cleanedBytes.length === 10) {
+      console.log('[DEBUG] Processing 10 cleaned bytes:', cleanedBytes.join(' '));
+      
+      // Convert hex strings back to numbers
+      const cleanedNumbers = cleanedBytes.map(byte => parseInt(byte, 16));
+      console.log('[DEBUG] Converted to numbers:', cleanedNumbers);
+
+      // Try extracting values from the cleaned bytes
+      try {
+        const pm25Direct = cleanedNumbers[2];
+        const pm10Direct = cleanedNumbers[4];
+
+        if (pm25Direct >= 0 && pm25Direct <= 999 && pm10Direct >= 0 && pm10Direct <= 999) {
+          console.log(`[DEBUG] Found valid values in cleaned bytes: PM2.5=${pm25Direct}, PM10=${pm10Direct}`);
+          setPm25(pm25Direct);
+          setPm10(pm10Direct); 
+          setLastUpdate(new Date().toLocaleTimeString());
+          setPacketType('modified');
+          
+          if (onLog) {
+            onLog(`Parsed values from cleaned bytes: PM2.5=${pm25Direct}, PM10=${pm10Direct}`);
+          }
+          return;
+        }
+      } catch (err) {
+        console.log('[DEBUG] Error processing cleaned bytes:', err);
+      }
+    }
+ 
+    
+    // Fall back to standard search if modified format not found or processing failed
     console.log('[DEBUG] Searching for standard 10-byte packets');
     for (let i = 0; i < dataBuffer.length - 10; i++) {
       if (dataBuffer[i] === 0xAA && dataBuffer[i + 9] === 0xAB) {
         console.log(`[DEBUG] Potential standard packet found at position ${i}`);
         const packet = dataBuffer.slice(i, i + 10);
-        console.log(`[DEBUG] Standard packet: ${byteArrayToHexString(packet)}`);
+        console.log(`[DEBUG] Standard packet (HEX): ${byteArrayToHexString(packet)}`);
+        console.log(`[DEBUG] Standard packet (DEC): ${byteArrayToDecString(packet)}`);
         
         const values = extractPMValues(packet);
         
@@ -58,88 +100,8 @@ export const useSensorData = ({ dataBuffer, onLog }: UseSensorDataProps): Sensor
             onLog(`Valid values extracted: PM2.5=${values.pm25.toFixed(1)}, PM10=${values.pm10.toFixed(1)}`);
           }
           
-          console.log('[DEBUG] Exiting after finding valid standard packet');
           return; // Exit once we find a valid packet
-        } else {
-          console.log('[DEBUG] Packet structure valid but values invalid, continuing search');
         }
-      }
-    }
-    
-    // Look for modified 20-byte packets (with 0A prefix pattern)
-    console.log('[DEBUG] No valid standard packets found, searching for modified 20-byte packets');
-    for (let i = 0; i < dataBuffer.length - 20; i++) {
-      // Look for start and end markers of a potential modified packet
-      // Based on observed data, we're seeing 0A 0A at start and 0A 0B near the end
-      const hasStartMarker = dataBuffer[i] === 0x0A && dataBuffer[i + 1] === 0x0A;
-      const hasEndMarker = dataBuffer[i + 18] === 0x0A && dataBuffer[i + 19] === 0x0B;
-      
-      // Log what we're seeing for diagnosis
-      if (hasStartMarker) {
-        console.log(`[DEBUG] Potential packet start at ${i}: ${dataBuffer[i]} ${dataBuffer[i+1]}`);
-      }
-      
-      if (hasEndMarker) {
-        console.log(`[DEBUG] Potential packet end at ${i+18}: ${dataBuffer[i+18]} ${dataBuffer[i+19]}`);
-      }
-      
-      // Only check if we have at least one of the markers
-      if (!hasStartMarker && !hasEndMarker) {
-        continue;
-      }
-      
-      console.log(`[DEBUG] Potential modified packet at position ${i}: Start marker: ${hasStartMarker}, End marker: ${hasEndMarker}`);
-      
-      // Try to convert a 20-byte segment to the standard format
-      const possibleModifiedPacket = dataBuffer.slice(i, i + 20);
-      console.log(`[DEBUG] Checking segment: ${byteArrayToHexString(possibleModifiedPacket)}`);
-      
-      // Also try the extraction directly
-      const values = extractPMValues(possibleModifiedPacket);
-      if (values) {
-        console.log(`[DEBUG] Direct extraction successful, PM2.5: ${values.pm25}, PM10: ${values.pm10}`);
-        setPm25(values.pm25);
-        setPm10(values.pm10);
-        setLastUpdate(new Date().toLocaleTimeString());
-        setPacketType('modified');
-        
-        if (onLog) {
-          onLog(`Modified packet found with direct extraction: ${byteArrayToHexString(possibleModifiedPacket)}`);
-          onLog(`Valid values extracted: PM2.5=${values.pm25.toFixed(1)}, PM10=${values.pm10.toFixed(1)}`);
-        }
-        
-        console.log('[DEBUG] Exiting after finding valid packet with direct extraction');
-        return;
-      }
-      
-      // If direct extraction failed, try the conversion path
-      const standardPacket = convertModifiedFormat(possibleModifiedPacket);
-      
-      if (standardPacket) {
-        console.log('[DEBUG] Successfully converted to standard packet');
-        // We found a valid modified packet and converted it to standard format
-        const convertedValues = extractPMValues(standardPacket);
-        
-        if (convertedValues) {
-          console.log(`[DEBUG] Valid modified packet confirmed, PM2.5: ${convertedValues.pm25}, PM10: ${convertedValues.pm10}`);
-          setPm25(convertedValues.pm25);
-          setPm10(convertedValues.pm10);
-          setLastUpdate(new Date().toLocaleTimeString());
-          setPacketType('modified');
-          
-          if (onLog) {
-            onLog(`Modified packet found: ${byteArrayToHexString(possibleModifiedPacket)}`);
-            onLog(`Converted to standard: ${byteArrayToHexString(standardPacket)}`);
-            onLog(`Valid values extracted: PM2.5=${convertedValues.pm25.toFixed(1)}, PM10=${convertedValues.pm10.toFixed(1)}`);
-          }
-          
-          console.log('[DEBUG] Exiting after finding valid modified packet');
-          return; // Exit once we find a valid packet
-        } else {
-          console.log('[DEBUG] Conversion successful but values invalid, continuing search');
-        }
-      } else {
-        console.log('[DEBUG] Not a valid modified packet, continuing search');
       }
     }
     
