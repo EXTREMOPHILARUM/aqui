@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   useColorScheme,
   View,
+  SafeAreaView,
 } from 'react-native';
 
 import { Colors } from 'react-native/Libraries/NewAppScreen';
@@ -89,7 +90,7 @@ function App(): React.JSX.Element {
   };
 
   return (
-    <View style={backgroundStyle}>
+    <SafeAreaView style={backgroundStyle}>
       <StatusBar
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         backgroundColor={backgroundStyle.backgroundColor}
@@ -122,26 +123,26 @@ function App(): React.JSX.Element {
             />
           </View>
 
-          {/* Raw Data Monitor */}
+          {/* Raw Data Monitor
           {connected && (
             <RawDataMonitor dataBuffer={dataBuffer} connected={connected} />
-          )}
+          )} */}
 
           {/* Log Display */}
-          <View style={styles.section}>
+          {/* <View style={styles.section}>
             <LogView 
               logs={log} 
               onClearLogs={clearLogs} 
               connected={connected}
               onSendCommand={handleSendCommand}
             />
-          </View>
+          </View> */}
 
           {/* About Section */}
           <AboutSensor />
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -155,6 +156,7 @@ const styles = StyleSheet.create({
   header: {
     padding: 16,
     backgroundColor: '#007AFF',
+    marginTop: 30,
   },
   headerText: {
     fontSize: 20,
