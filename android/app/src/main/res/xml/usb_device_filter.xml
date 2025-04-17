@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Common USB to Serial adapters -->
+    <!-- CH340/CH341 USB Serial (vendor-id 6790, product-id 29987) -->
+    <usb-device vendor-id="6790" product-id="29987" />
+    
+    <!-- FTDI FT232 (vendor-id 1027) -->
+    <usb-device vendor-id="1027" />
+    
+    <!-- CP210x (vendor-id 4292) -->
+    <usb-device vendor-id="4292" />
+    
+    <!-- Prolific PL2303 (vendor-id 1659, product-id 8963) -->
+    <usb-device vendor-id="1659" product-id="8963" />
+</resources> 
