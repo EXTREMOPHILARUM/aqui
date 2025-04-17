@@ -136,6 +136,6 @@ dependencies {
         implementation jscFlavor
     }
 
-    // Add implementation for react-native-usb-serialport
-    implementation fileTree(dir: '../../node_modules/react-native-usb-serialport/android/libs', include: ['*.aar'])
+    // Add implementation for react-native-usb-serialport-for-android
+    implementation fileTree(dir: '../../node_modules/react-native-usb-serialport-for-android/android/libs', include: ['*.aar'])
 }
