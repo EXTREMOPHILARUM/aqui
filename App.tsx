@@ -55,12 +55,14 @@ function App(): React.JSX.Element {
     connectDevice,
     disconnectDevice,
     sendCommand,
+    clearBuffer,
   } = useUsbSerial(addLog);
 
   // Process sensor data
   const { pm25, pm10, lastUpdate, packetType } = useSensorData({ 
     dataBuffer, 
-    onLog: addLog 
+    onLog: addLog,
+    clearBuffer 
   });
 
   useEffect(() => {

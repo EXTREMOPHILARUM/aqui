@@ -7,6 +7,7 @@ import { extractPMValues, byteArrayToHexString, extractPMValuesFromModifiedForma
 interface UseSensorDataProps {
   dataBuffer: number[];
   onLog?: (message: string) => void;
+  clearBuffer?: () => void;
 }
 
 interface SensorData {
@@ -19,11 +20,12 @@ interface SensorData {
 /**
  * Hook for handling sensor data processing
  */
-export const useSensorData = ({ dataBuffer, onLog }: UseSensorDataProps): SensorData => {
+export const useSensorData = ({ dataBuffer, onLog, clearBuffer }: UseSensorDataProps): SensorData => {
   const [pm25, setPm25] = useState<number | null>(null);
   const [pm10, setPm10] = useState<number | null>(null); 
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [packetType, setPacketType] = useState<'standard' | 'modified' | null>(null);
+  const [lastProcessedLength, setLastProcessedLength] = useState<number>(0);
   
   // Process buffer whenever it changes
   useEffect(() => {
@@ -69,6 +71,13 @@ export const useSensorData = ({ dataBuffer, onLog }: UseSensorDataProps): Sensor
           if (onLog) {
             onLog(`Parsed values from cleaned bytes: PM2.5=${pm25Direct}, PM10=${pm10Direct}`);
           }
+          
+          // Clear buffer after successful processing
+          if (clearBuffer) {
+            clearBuffer();
+            console.log('[DEBUG] Buffer cleared after successful data extraction');
+          }
+          
           return;
         }
       } catch (err) {
@@ -100,13 +109,19 @@ export const useSensorData = ({ dataBuffer, onLog }: UseSensorDataProps): Sensor
             onLog(`Valid values extracted: PM2.5=${values.pm25.toFixed(1)}, PM10=${values.pm10.toFixed(1)}`);
           }
           
+          // Clear buffer after successful processing
+          if (clearBuffer) {
+            clearBuffer();
+            console.log('[DEBUG] Buffer cleared after successful data extraction');
+          }
+          
           return; // Exit once we find a valid packet
         }
       }
     }
     
     console.log('[DEBUG] No valid packets found in buffer');
-  }, [dataBuffer, onLog]);
+  }, [dataBuffer, onLog, clearBuffer]);
   
   return { pm25, pm10, lastUpdate, packetType };
 };
