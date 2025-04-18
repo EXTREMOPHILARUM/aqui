@@ -122,9 +122,9 @@ android {
         }
         release {
             storeFile file('my-release-key.keystore')
-            storePassword envProperties.getProperty('ANDROID_STORE_PASSWORD', RELEASE_STORE_PASSWORD)
+            storePassword envProperties.getProperty('ANDROID_STORE_PASSWORD', 'android')
             keyAlias 'my-key-alias'
-            keyPassword envProperties.getProperty('ANDROID_KEY_PASSWORD', RELEASE_KEY_PASSWORD)
+            keyPassword envProperties.getProperty('ANDROID_KEY_PASSWORD', 'android')
         }
     }
     buildTypes {

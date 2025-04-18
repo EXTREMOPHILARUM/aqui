@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 
 interface Device {
   deviceId: number;
@@ -11,18 +11,26 @@ interface DeviceListProps {
   devices: Device[];
   connected: boolean;
   currentDevice: number | null;
+  autoConnect: boolean;
+  autoRefresh: boolean;
   onConnect: (deviceId: number) => void;
   onDisconnect: () => void;
   onRefresh: () => void;
+  onToggleAutoConnect: () => void;
+  onToggleAutoRefresh: () => void;
 }
 
 const DeviceList: React.FC<DeviceListProps> = ({
   devices,
   connected,
   currentDevice,
+  autoConnect,
+  autoRefresh,
   onConnect,
   onDisconnect,
-  onRefresh
+  onRefresh,
+  onToggleAutoConnect,
+  onToggleAutoRefresh
 }) => {
   return (
     <View style={styles.container}>
@@ -30,6 +38,28 @@ const DeviceList: React.FC<DeviceListProps> = ({
       <Text style={styles.explanationText}>
         Connect your SDS011/SDS021 PM sensor to read air quality data
       </Text>
+      
+      <View style={styles.autoOptionsContainer}>
+        <View style={styles.toggleOption}>
+          <Text style={styles.toggleLabel}>Auto Connect</Text>
+          <Switch
+            value={autoConnect}
+            onValueChange={onToggleAutoConnect}
+            trackColor={{ false: '#767577', true: '#81b0ff' }}
+            thumbColor={autoConnect ? '#007AFF' : '#f4f3f4'}
+          />
+        </View>
+        
+        <View style={styles.toggleOption}>
+          <Text style={styles.toggleLabel}>Auto Refresh</Text>
+          <Switch
+            value={autoRefresh}
+            onValueChange={onToggleAutoRefresh}
+            trackColor={{ false: '#767577', true: '#81b0ff' }}
+            thumbColor={autoRefresh ? '#007AFF' : '#f4f3f4'}
+          />
+        </View>
+      </View>
       
       <TouchableOpacity 
         style={[styles.button, styles.refreshButton]} 
@@ -100,6 +130,21 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 16,
     lineHeight: 20,
+  },
+  autoOptionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  toggleOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  toggleLabel: {
+    fontSize: 14,
+    color: '#333',
+    marginRight: 8,
   },
   button: {
     paddingVertical: 10,

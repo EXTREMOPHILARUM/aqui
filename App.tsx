@@ -49,11 +49,53 @@ function App(): React.JSX.Element {
     if (message.includes('Found')) {
       return 'Discovered sensor devices';
     }
+    if (message.includes('Forcing immediate device list refresh')) {
+      return 'Updating device list';
+    }
     if (message.includes('Connected to device')) {
       return 'Connected to sensor successfully';
     }
     if (message.includes('Disconnected')) {
       return 'Disconnected from sensor';
+    }
+    if (message.includes('USB device attached')) {
+      return 'USB device attached - preparing to connect';
+    }
+    if (message.includes('USB device detached')) {
+      return 'USB device physically removed';
+    }
+    if (message.includes('Remembered detached device')) {
+      return null; // Technical detail, hide in user mode
+    }
+    if (message.includes('Will refresh device list')) {
+      return null; // Technical detail, hide in user mode
+    }
+    if (message.includes('Attempting to reconnect to previously detached device')) {
+      return 'Attempting to reconnect to the previously connected device';
+    }
+    if (message.includes('Previously detached device ID changed')) {
+      return 'Reconnecting to available device';
+    }
+    if (message.includes('Handling physical device disconnection')) {
+      return 'USB device has been physically disconnected';
+    }
+    if (message.includes('waiting to stabilize')) {
+      return 'Device attached - waiting for connection to stabilize';
+    }
+    if (message.includes('Handling unexpected device disconnection')) {
+      return 'Sensor unexpectedly disconnected - will attempt to reconnect';
+    }
+    if (message.includes('Connection check failed')) {
+      return null; // Don't show these technical details in user mode
+    }
+    if (message.includes('Device appears to be disconnected')) {
+      return 'Lost connection to sensor - attempting to reconnect';
+    }
+    if (message.includes('Will try to reconnect')) {
+      return 'Attempting to reconnect to sensor...';
+    }
+    if (message.includes('Connection restored')) {
+      return 'Connection to sensor restored';
     }
     if (message.includes('Error connecting')) {
       return 'Could not connect to sensor device';
@@ -109,10 +151,14 @@ function App(): React.JSX.Element {
     connected,
     currentDevice,
     dataBuffer,
+    autoConnect,
+    autoRefresh,
     refreshDeviceList,
     connectDevice,
     disconnectDevice,
     sendCommand,
+    toggleAutoConnect,
+    toggleAutoRefresh,
     clearBuffer,
   } = useUsbSerial(addLog);
 
@@ -180,14 +226,18 @@ function App(): React.JSX.Element {
             />
           </View>
           {/* Device Connection Section */}
-          <DeviceList
+          {/* <DeviceList
             devices={devices}
             connected={connected}
             currentDevice={currentDevice}
+            autoConnect={autoConnect}
+            autoRefresh={autoRefresh}
             onConnect={connectDevice}
             onDisconnect={disconnectDevice}
             onRefresh={refreshDeviceList}
-          />
+            onToggleAutoConnect={toggleAutoConnect}
+            onToggleAutoRefresh={toggleAutoRefresh}
+          /> */}
 
           <AboutSensor />
 
@@ -265,7 +315,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#333',
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 5,
   },
   devModeToggle: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { getPM25Category, getPM10Category } from '../utils/sensorUtils';
 
 interface SensorDataProps {
@@ -26,12 +26,66 @@ const SensorData: React.FC<SensorDataProps> = ({
   // Use average values if available, otherwise fall back to current readings
   const displayPm25 = avgPm25 !== null && readingsCount > 0 ? avgPm25 : pm25;
   const displayPm10 = avgPm10 !== null && readingsCount > 0 ? avgPm10 : pm10;
+  
+  // Animation for status indicator
+  const [pulseAnim] = useState(new Animated.Value(1));
+  
+  // Start pulsing animation for connected state
+  useEffect(() => {
+    if (connected) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.4,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          })
+        ])
+      ).start();
+    } else {
+      // Stop animation when disconnected
+      pulseAnim.setValue(1);
+      Animated.timing(pulseAnim, {
+        toValue: 1,
+        duration: 0,
+        useNativeDriver: true,
+      }).stop();
+    }
+    
+    return () => {
+      Animated.timing(pulseAnim, {
+        toValue: 1,
+        duration: 0,
+        useNativeDriver: true,
+      }).stop();
+    };
+  }, [connected, pulseAnim]);
 
   return (
     <View style={styles.sensorDataContainer}>
+      <View style={styles.statusBar}>
+        <View style={styles.statusContainer}>
+          <Animated.View 
+            style={[
+              styles.statusIndicator, 
+              connected ? styles.statusConnected : styles.statusDisconnected,
+              { opacity: connected ? pulseAnim : 1 }
+            ]} 
+          />
+          <Text style={styles.statusText}>
+            {connected ? 'Connected' : 'Disconnected'}
+          </Text>
+        </View>
+      </View>
+      
       {displayPm25 === null || displayPm10 === null ? (
         <View style={styles.noDataContainer}>
-          <Text style={styles.noDataText}>No valid data packets detected</Text>
+          <Text style={styles.noDataText}>No valid data packets detected. Please force stop and restart the app also reconnect the sensor.</Text>
           <Text style={styles.noDataSubtext}>
             {connected 
               ? 'Sensor connected. Waiting for valid data...' 
@@ -107,6 +161,32 @@ const styles = StyleSheet.create({
   sensorDataContainer: {
     alignItems: 'center',
     padding: 16,
+  },
+  statusBar: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 12,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 5,
+  },
+  statusConnected: {
+    backgroundColor: '#4CAF50',
+  },
+  statusDisconnected: {
+    backgroundColor: '#F44336',
+  },
+  statusText: {
+    fontSize: 12,
+    color: '#666',
   },
   readingTabs: {
     width: '100%',
