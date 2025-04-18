@@ -1,0 +1,6 @@
+<resources>
+    <!-- Styles for API level 33+ to handle lStar attribute -->
+    <style name="AppTheme.Compat" parent="AppTheme">
+        <!-- Empty style to override problematic attributes -->
+    </style>
+</resources> 

@@ -129,6 +129,11 @@ android {
         exclude 'META-INF/DEPENDENCIES'
     }
     
+    // Add compatibility for older Android SDK versions
+    androidResources {
+        additionalParameters += ["--warn-manifest-validation"]
+    }
+    
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
