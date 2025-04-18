@@ -40,6 +40,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#333',
     marginBottom: 10,
   },
   aboutText: {

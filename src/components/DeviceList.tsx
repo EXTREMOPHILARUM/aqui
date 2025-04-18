@@ -93,6 +93,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+    color: '#333',
   },
   explanationText: {
     fontSize: 14,
@@ -140,6 +141,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1,
     marginRight: 10,
+    color: '#333',
   },
   noDevicesText: {
     textAlign: 'center',

@@ -101,16 +101,20 @@ export const useSensorData = ({ dataBuffer, onLog, clearBuffer }: UseSensorDataP
       try {
         const pm25Direct = cleanedNumbers[2];
         const pm10Direct = cleanedNumbers[4];
+        
+        // Use the formula matching the Java code: (high_byte*256 + low_byte)/10
+        const pm25 = (cleanedNumbers[3]*256 + cleanedNumbers[2])/10;
+        const pm10 = (cleanedNumbers[5]*256 + cleanedNumbers[4])/10;
 
-        if (pm25Direct >= 0 && pm25Direct <= 999 && pm10Direct >= 0 && pm10Direct <= 999) {
-          console.log(`[DEBUG] Found valid values in cleaned bytes: PM2.5=${pm25Direct}, PM10=${pm10Direct}`);
+        if (pm25 >= 0 && pm25 <= 999 && pm10 >= 0 && pm10 <= 999) {
+          console.log(`[DEBUG] Found valid values using Java formula: PM2.5=${pm25}, PM10=${pm10}`);
           
           // Add reading and update averages
-          addReading(pm25Direct, pm10Direct);
+          addReading(pm25, pm10);
           setPacketType('modified');
           
           if (onLog) {
-            onLog(`Parsed values from cleaned bytes: PM2.5=${pm25Direct}, PM10=${pm10Direct}`);
+            onLog(`Parsed values with formula: PM2.5=${pm25.toFixed(1)}, PM10=${pm10.toFixed(1)}`);
           }
           
           // Clear buffer after successful processing
