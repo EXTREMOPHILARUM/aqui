@@ -51,6 +51,7 @@ A React Native mobile application for air quality monitoring using SDS011/SDS021
      keytool -genkeypair -v -storetype PKCS12 -keystore my-release-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000
      ```
    - Then move the generated file to `android/app/`
+   - **Important**: The key alias must be exactly `my-key-alias` as configured in the app's build.gradle
 
 2. Create a `.env` file in the project root with your keystore passwords:
    ```
@@ -111,3 +112,39 @@ The workflow will:
 1. Build the APK with release signing
 2. Create a GitHub release for the tag
 3. Attach the APK to the release
+
+## Building Android Release with Environment Variables
+
+### Using .env file (recommended for local development)
+
+1. Create a `.env` file in the project root with your keystore passwords:
+   ```
+   ANDROID_STORE_PASSWORD=your_store_password
+   ANDROID_KEY_PASSWORD=your_key_password
+   ```
+
+2. Make sure your keystore file is placed at `android/app/my-release-key.keystore`
+
+3. Run the build command with environment variables loaded from .env:
+   ```
+   npm run build-android-release-env
+   ```
+
+### Alternative methods
+
+You can also provide environment variables directly:
+
+```bash
+# Windows PowerShell
+$env:ANDROID_STORE_PASSWORD="your_password"
+$env:ANDROID_KEY_PASSWORD="your_password"
+npm run build-android-release
+
+# Windows CMD
+set ANDROID_STORE_PASSWORD=your_password
+set ANDROID_KEY_PASSWORD=your_password
+npm run build-android-release
+
+# Linux/macOS
+ANDROID_STORE_PASSWORD=your_password ANDROID_KEY_PASSWORD=your_password npm run build-android-release
+```

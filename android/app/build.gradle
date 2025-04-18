@@ -4,11 +4,27 @@ apply plugin: "com.facebook.react"
 
 // Load environment variables from .env file
 def envFile = new File(rootProject.projectDir.parentFile, '.env')
-def envProperties = new Properties()
+project.ext.envProperties = new Properties()
 if (envFile.exists()) {
     envFile.withReader { reader ->
-        envProperties.load(reader)
+        project.ext.envProperties.load(reader)
     }
+}
+
+// Function to get environment variable from .env or system environment
+def getEnv(String key, String defaultValue) {
+    // First check .env properties
+    def value = project.ext.envProperties.getProperty(key)
+    println("From .env file, ${key} = ${value}")
+    
+    // Then check system environment variables
+    if (value == null) {
+        value = System.getenv(key)
+        println("From system env, ${key} = ${value == null ? 'not found' : 'found'}")
+    }
+    
+    // Return the value or default
+    return value ?: defaultValue
 }
 
 /**
@@ -122,9 +138,10 @@ android {
         }
         release {
             storeFile file('my-release-key.keystore')
-            storePassword envProperties.getProperty('ANDROID_STORE_PASSWORD', 'android')
+            storePassword getEnv('ANDROID_STORE_PASSWORD', 'android')
             keyAlias 'my-key-alias'
-            keyPassword envProperties.getProperty('ANDROID_KEY_PASSWORD', 'android')
+            keyPassword getEnv('ANDROID_KEY_PASSWORD', 'android')
+            storeType 'PKCS12'
         }
     }
     buildTypes {

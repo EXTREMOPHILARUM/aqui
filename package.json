@@ -10,8 +10,10 @@
     "test": "jest",
     "clean": "cd android && .\\gradlew clean && cd ..",
     "build-android-release": "node ./scripts/build-android.js",
+    "build-android-release-env": "dotenv node ./scripts/build-android.js",
     "build-ios-release": "react-native run-ios --configuration Release",
-    "build-release": "npm run build-android-release && npm run build-ios-release"
+    "build-release": "npm run build-android-release && npm run build-ios-release",
+    "simple-keystore": "node ./scripts/simple-keystore.js"
   },
   "dependencies": {
     "react": "19.0.0",
@@ -32,6 +34,8 @@
     "@types/jest": "^29.5.13",
     "@types/react": "^19.0.0",
     "@types/react-test-renderer": "^19.0.0",
+    "dotenv": "^16.5.0",
+    "dotenv-cli": "^8.0.0",
     "eslint": "^8.19.0",
     "jest": "^29.6.3",
     "prettier": "2.8.8",
