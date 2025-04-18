@@ -38,6 +38,9 @@ jobs:
         run: |
           echo "ANDROID_STORE_PASSWORD=${{ secrets.ANDROID_STORE_PASSWORD }}" > .env
           echo "ANDROID_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}" >> .env
+          
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
 
       - name: Build Android Release
         run: npm run build-android-release
