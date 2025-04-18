@@ -9,7 +9,7 @@
     "start": "react-native start --reset-cache",
     "test": "jest",
     "clean": "cd android && .\\gradlew clean && cd ..",
-    "build-android-release": "cd android && .\\gradlew assembleRelease && cd ..",
+    "build-android-release": "node ./scripts/build-android.js",
     "build-ios-release": "react-native run-ios --configuration Release",
     "build-release": "npm run build-android-release && npm run build-ios-release"
   },
