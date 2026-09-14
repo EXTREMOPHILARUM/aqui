@@ -1,52 +1,51 @@
 /**
- * Visual system for the "Big number" design: ink on paper, Manrope, one
- * accent taken from the reading's category.
+ * Visual system in xkdr.org's design language: warm paper, black, and a coral
+ * display accent; Montserrat for headings, labels and buttons, Merriweather
+ * for reading text; square corners throughout.
  */
 import { AirQualityIndex } from './utils/sensorUtils';
 
 export const colors = {
-  paper: '#faf8f3',
-  ink: '#1f1d1a',
-  muted: '#6b6560',
-  rule: '#e6e1d8',
-  border: '#d9d3c8',
-  green: '#2f9e5b',
-  amber: '#e0a52a',
-  idle: '#c9c2b6',
-  white: '#ffffff',
+  paper: '#f2f1f0',
+  ink: '#000000',
+  body: '#212529',
+  muted: '#4b4b4b',
+  faint: '#7a7a7a',
+  rule: '#d6d6d6',
+  coral: '#f57d6a',
+  /** Large numbers and screen titles. Coral is below text-contrast minimums on paper; use ink to fix that. */
+  display: '#f57d6a',
 };
 
 /**
- * Static Manrope faces bundled in android/app/src/main/assets/fonts.
- * Use the face name as fontFamily; never combine with fontWeight, or
- * Android will synthesise a second bold on top.
+ * Static faces bundled in android/app/src/main/assets/fonts. Use the face
+ * name as fontFamily and never add fontWeight, or Android synthesises bold.
  */
 export const fonts = {
-  regular: 'Manrope-Regular',
-  medium: 'Manrope-Medium',
-  semibold: 'Manrope-SemiBold',
-  extrabold: 'Manrope-ExtraBold',
+  montserratSemiBold: 'Montserrat-SemiBold',
+  montserratBold: 'Montserrat-Bold',
+  montserratExtraBold: 'Montserrat-ExtraBold',
+  montserratBlack: 'Montserrat-Black',
+  merriweather: 'Merriweather-Regular',
 };
 
 export interface Band {
   label: string;
   hint: string;
-  bg: string;
-  fg: string;
+  swatch: string;
 }
 
 const BANDS: Record<string, Band> = {
-  Good: { label: 'Good', hint: 'clean air right now', bg: '#d7f0df', fg: '#1e6b3c' },
-  Moderate: { label: 'Moderate', hint: 'fine for most people', bg: '#f8e9a6', fg: '#6d4f00' },
+  Good: { label: 'Good', hint: 'Clean air right now.', swatch: '#3cb46e' },
+  Moderate: { label: 'Moderate', hint: 'Fine for most people.', swatch: '#e9c046' },
   'Unhealthy for Sensitive Groups': {
     label: 'Sensitive groups',
-    hint: 'take care if you are sensitive',
-    bg: '#fbd9b5',
-    fg: '#8a4b00',
+    hint: 'Take care if you are sensitive.',
+    swatch: '#ee8a3c',
   },
-  Unhealthy: { label: 'Unhealthy', hint: 'everyone may feel effects', bg: '#f9c9c4', fg: '#8f1f18' },
-  'Very Unhealthy': { label: 'Very unhealthy', hint: 'health alert, stay inside', bg: '#e6d0f2', fg: '#5e2a80' },
-  Hazardous: { label: 'Hazardous', hint: 'emergency conditions', bg: '#edc7d6', fg: '#6e1436' },
+  Unhealthy: { label: 'Unhealthy', hint: 'Everyone may feel effects.', swatch: '#d9483b' },
+  'Very Unhealthy': { label: 'Very unhealthy', hint: 'Health alert. Stay inside.', swatch: '#8f4fb3' },
+  Hazardous: { label: 'Hazardous', hint: 'Emergency conditions.', swatch: '#7e2344' },
 };
 
 export const pm25Band = (value: number): Band => BANDS[AirQualityIndex.getPM25Category(value)];

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { colors, fonts } from '../theme';
 import { BackIcon } from './Icons';
 
@@ -12,33 +12,41 @@ interface TopBarProps {
   onBack?: () => void;
 }
 
-const DOT_COLOR: Record<SensorPresence, string> = {
-  connected: colors.green,
-  found: colors.amber,
-  none: colors.idle,
+/** Filled black when connected, coral when the sensor needs attention, an outline when absent. */
+const MARKER: Record<SensorPresence, ViewStyle> = {
+  connected: { backgroundColor: colors.ink },
+  found: { backgroundColor: colors.coral },
+  none: { borderWidth: 1, borderColor: colors.faint },
 };
 
 /**
- * "Aqui" (or a back chevron and a title) on the left, sensor presence on the right.
+ * Uppercase title (with a back chevron on inner screens) and sensor presence,
+ * over a black hairline.
  */
 const TopBar: React.FC<TopBarProps> = ({ title, presence, sensorLabel, onBack }) => (
-  <View style={styles.row}>
-    {onBack ? (
-      <TouchableOpacity onPress={onBack} style={styles.back} accessibilityRole="button" accessibilityLabel="Back">
-        <BackIcon />
+  <View style={styles.container}>
+    <View style={styles.row}>
+      {onBack ? (
+        <TouchableOpacity onPress={onBack} style={styles.back} accessibilityRole="button" accessibilityLabel="Back">
+          <BackIcon />
+          <Text style={styles.title}>{title}</Text>
+        </TouchableOpacity>
+      ) : (
         <Text style={styles.title}>{title}</Text>
-      </TouchableOpacity>
-    ) : (
-      <Text style={styles.title}>{title}</Text>
-    )}
-    <View style={styles.status}>
-      <View style={[styles.dot, { backgroundColor: DOT_COLOR[presence] }]} />
-      <Text style={styles.statusText}>{sensorLabel}</Text>
+      )}
+      <View style={styles.status}>
+        <View style={[styles.marker, MARKER[presence]]} />
+        <Text style={[styles.statusText, presence === 'none' && styles.statusIdle]}>{sensorLabel}</Text>
+      </View>
     </View>
+    <View style={styles.rule} />
   </View>
 );
 
 const styles = StyleSheet.create({
+  container: {
+    gap: 8,
+  },
   row: {
     height: 44,
     flexDirection: 'row',
@@ -48,30 +56,39 @@ const styles = StyleSheet.create({
   back: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     height: 44,
     paddingRight: 12,
   },
   title: {
-    fontFamily: fonts.semibold,
-    fontSize: 15,
+    fontFamily: fonts.montserratBold,
+    fontSize: 16,
+    lineHeight: 30,
+    textTransform: 'uppercase',
     color: colors.ink,
-    letterSpacing: 0.15,
   },
   status: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  dot: {
+  marker: {
     width: 8,
     height: 8,
-    borderRadius: 4,
   },
   statusText: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.muted,
+    fontFamily: fonts.montserratBold,
+    fontSize: 12,
+    lineHeight: 30,
+    textTransform: 'uppercase',
+    color: colors.ink,
+  },
+  statusIdle: {
+    color: colors.faint,
+  },
+  rule: {
+    height: 1,
+    backgroundColor: colors.ink,
   },
 });
 

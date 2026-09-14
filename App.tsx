@@ -186,11 +186,11 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     backgroundColor: colors.paper,
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
   },
   content: {
     flex: 1,
-    gap: 20,
+    gap: 16,
   },
 });
 

@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, Switch } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { colors, fonts } from '../theme';
-import GhostButton from './GhostButton';
+import Button from './Button';
 
 export interface LogEntry {
   id: number;
@@ -18,28 +18,31 @@ interface LogsScreenProps {
 }
 
 /**
- * The log as its own screen: a developer switch, then one row per entry,
- * newest first. In plain mode only entries with a friendly wording show.
+ * The log as its own screen: a square developer switch, then one row per
+ * entry, newest first. In plain mode only entries with a friendly wording show.
  */
 const LogsScreen: React.FC<LogsScreenProps> = ({ entries, developer, onToggleDeveloper, onClear }) => {
   const visible = developer ? entries : entries.filter(e => e.friendly !== null);
   const newestFirst = [...visible].reverse();
   return (
     <View style={styles.container}>
-      <View style={styles.toggleRow}>
+      <Pressable
+        style={styles.toggleRow}
+        onPress={() => onToggleDeveloper(!developer)}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: developer }}
+        accessibilityLabel="Developer detail">
         <Text style={styles.toggleLabel}>Developer detail</Text>
-        <Switch
-          value={developer}
-          onValueChange={onToggleDeveloper}
-          trackColor={{ false: colors.border, true: colors.ink }}
-          thumbColor={colors.white}
-        />
-      </View>
+        <View style={[styles.track, developer && styles.trackOn]}>
+          <View style={[styles.knob, developer && styles.knobOn]} />
+        </View>
+      </Pressable>
       <FlatList
         style={styles.list}
         data={newestFirst}
         keyExtractor={item => String(item.id)}
         ListEmptyComponent={<Text style={styles.empty}>Nothing logged yet.</Text>}
+        ListFooterComponent={newestFirst.length > 0 ? <View style={styles.rule} /> : null}
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Text style={styles.time}>{item.time}</Text>
@@ -47,7 +50,7 @@ const LogsScreen: React.FC<LogsScreenProps> = ({ entries, developer, onToggleDev
           </View>
         )}
       />
-      <GhostButton label="Clear" onPress={onClear} />
+      <Button label="Clear" variant="outline" onPress={onClear} />
     </View>
   );
 };
@@ -55,7 +58,7 @@ const LogsScreen: React.FC<LogsScreenProps> = ({ entries, developer, onToggleDev
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    gap: 20,
+    gap: 16,
   },
   toggleRow: {
     height: 44,
@@ -64,40 +67,66 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   toggleLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
+    fontFamily: fonts.merriweather,
+    fontSize: 14,
+    lineHeight: 25,
     color: colors.ink,
+  },
+  track: {
+    width: 48,
+    height: 26,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: colors.ink,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  trackOn: {
+    backgroundColor: colors.ink,
+    alignItems: 'flex-end',
+  },
+  knob: {
+    width: 20,
+    height: 20,
+    backgroundColor: colors.ink,
+  },
+  knobOn: {
+    backgroundColor: colors.paper,
   },
   list: {
     flex: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.rule,
   },
   row: {
     flexDirection: 'row',
     gap: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderTopWidth: 1,
     borderTopColor: colors.rule,
   },
   time: {
     width: 64,
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.muted,
+    fontFamily: fonts.montserratSemiBold,
+    fontSize: 12,
+    lineHeight: 25,
+    color: colors.ink,
     fontVariant: ['tabular-nums'],
   },
   message: {
     flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 21,
+    fontFamily: fonts.merriweather,
+    fontSize: 14,
+    lineHeight: 25,
     color: colors.ink,
   },
+  rule: {
+    height: 1,
+    backgroundColor: colors.rule,
+  },
   empty: {
-    paddingVertical: 14,
-    fontFamily: fonts.regular,
-    fontSize: 15,
+    paddingVertical: 12,
+    fontFamily: fonts.merriweather,
+    fontSize: 14,
+    lineHeight: 25,
     color: colors.muted,
   },
 });
