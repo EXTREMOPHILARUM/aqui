@@ -4,6 +4,8 @@
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+        <!-- Paper behind the app while it starts, so launch does not flash white or black. -->
+        <item name="android:windowBackground">@color/paper</item>
     </style>
 
 </resources>

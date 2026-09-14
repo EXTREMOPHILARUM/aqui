@@ -15,7 +15,7 @@ if (envFile.exists()) {
 def getEnv(String key, String defaultValue) {
     // First check .env properties
     def value = project.ext.envProperties.getProperty(key)
-    println("From .env file, ${key} = ${value}")
+    println("From .env file, ${key} = ${value == null ? 'not found' : 'found'}")
     
     // Then check system environment variables
     if (value == null) {

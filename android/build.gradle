@@ -2,12 +2,17 @@
 
 buildscript {
     ext {
-        buildToolsVersion = "35.0.0"
+        buildToolsVersion = "36.0.0"
         minSdkVersion = 24
-        compileSdkVersion = 35
-        targetSdkVersion = 35
+        compileSdkVersion = 36
+        targetSdkVersion = 36
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.0.21"
+        // react-native-usb-serialport-for-android reads these; without them it
+        // compiles against SDK 30 and fails on android:attr/lStar (AndroidX >= 1.7).
+        UsbSerialportForAndroid_compileSdkVersion = compileSdkVersion
+        UsbSerialportForAndroid_targetSdkVersion = targetSdkVersion
+        UsbSerialportForAndroid_minSdkVersion = minSdkVersion
     }
     repositories {
         google()
